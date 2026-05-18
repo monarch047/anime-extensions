@@ -1,0 +1,44 @@
+name: Build HomeFlix
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/en/homeflix/**'
+      - 'lib-multisrc/dopeflix/**'
+      - 'lib/dopeflixextractor/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build HomeFlix
+        env:
+          MEGACLOUD_API: ${{ secrets.MEGACLOUD_API }}
+        run: |
+          ./gradlew :src:en:homeflix:assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: homeflix-apk
+          path: src/en/homeflix/build/outputs/apk/release/*.apk
+          retention-days: 30
