@@ -19,6 +19,7 @@ import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.util.asJsoup
 import keiyoushi.utils.LazyMutable
+import keiyoushi.utils.addEditTextPreference
 import keiyoushi.utils.addListPreference
 import keiyoushi.utils.addSetPreference
 import keiyoushi.utils.getPreferencesLazy
@@ -40,8 +41,7 @@ abstract class DopeFlix(
     override val name: String,
     override val lang: String,
     private val megaCloudApi: String,
-    private val domainList: List<String>,
-    private val defaultDomain: String = "https://${domainList.first()}",
+    private val defaultDomain: String,
     private val hosterNames: List<String> = listOf(
         "UpCloud",
         "MegaCloud",
@@ -448,17 +448,12 @@ abstract class DopeFlix(
         by LazyMutable { preferences.getStringSet(PREF_HOSTER_KEY, hosterNames.toSet())!! }
 
     protected open fun SharedPreferences.clearOldPrefs(): SharedPreferences {
-        val domain = getString(PREF_DOMAIN_KEY, defaultDomain)!!.removePrefix("https://")
         val hostToggle = getStringSet(PREF_HOSTER_KEY, hosterNames.toSet())!!
 
-        val invalidDomain = domain !in domainList
         val invalidHosters = hostToggle.any { it !in hosterNames }
 
-        if (invalidDomain || invalidHosters) {
+        if (invalidHosters) {
             edit().also { editor ->
-                if (invalidDomain) {
-                    editor.putString(PREF_DOMAIN_KEY, defaultDomain)
-                }
                 if (invalidHosters) {
                     editor.putStringSet(PREF_HOSTER_KEY, hosterNames.toSet())
                     editor.putString(PREF_SERVER_KEY, preferredHoster)
@@ -469,18 +464,21 @@ abstract class DopeFlix(
     }
 
     override fun setupPreferenceScreen(screen: PreferenceScreen) {
-        screen.addListPreference(
+        screen.addEditTextPreference(
             key = PREF_DOMAIN_KEY,
-            title = PREF_DOMAIN_TITLE,
-            entries = domainList,
-            entryValues = domainList.map { "https://$it" },
             default = defaultDomain,
-            summary = "%s",
-        ) {
-            baseUrl = it
-            preferences.domainUrl = it
-            docHeaders = newHeaders()
-        }
+            title = PREF_DOMAIN_TITLE,
+            summary = "Current domain: %s",
+            getSummary = { "Current domain: $it" },
+            dialogMessage = "Enter the full domain URL (e.g. https://1flix.to)",
+            validate = { it.startsWith("http://") || it.startsWith("https://") },
+            validationMessage = { "Must start with http:// or https://" },
+            onComplete = {
+                baseUrl = it
+                preferences.domainUrl = it
+                docHeaders = newHeaders()
+            },
+        )
 
         screen.addListPreference(
             key = PREF_POPULAR_TYPE_KEY,
