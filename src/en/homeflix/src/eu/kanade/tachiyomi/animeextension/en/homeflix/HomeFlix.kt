@@ -107,9 +107,7 @@ class HomeFlix :
     }
 
     /** Allow any domain — don't restrict to domainList */
-    override fun SharedPreferences.clearOldPrefs(): SharedPreferences {
-        return this
-    }
+    override fun SharedPreferences.clearOldPrefs(): SharedPreferences = this
 
     override var SharedPreferences.domainUrl
         by LazyMutable { preferences.getString(PREF_DOMAIN_KEY, "https://1flix.to")!! }
