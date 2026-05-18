@@ -34,11 +34,11 @@ jobs:
         env:
           MEGACLOUD_API: ${{ secrets.MEGACLOUD_API }}
         run: |
-          ./gradlew :src:en:homeflix:assembleRelease
+          ./gradlew :src:en:homeflix:assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: homeflix-apk
-          path: src/en/homeflix/build/outputs/apk/release/*.apk
+          path: src/en/homeflix/build/outputs/apk/debug/*.apk
           retention-days: 30
