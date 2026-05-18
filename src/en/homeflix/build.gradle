@@ -1,0 +1,9 @@
+ext {
+    extName = 'HomeFlix'
+    extClass = '.HomeFlix'
+    themePkg = 'dopeflix'
+    baseUrl = 'https://1flix.to'
+    overrideVersionCode = 1
+}
+
+apply from: "$rootDir/common.gradle"
