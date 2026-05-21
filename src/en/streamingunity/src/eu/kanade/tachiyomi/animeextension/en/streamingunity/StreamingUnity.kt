@@ -1,7 +1,6 @@
 package eu.kanade.tachiyomi.animeextension.en.streamingunity
 
 import android.app.Application
-import android.content.SharedPreferences
 import androidx.preference.ListPreference
 import androidx.preference.PreferenceScreen
 import eu.kanade.tachiyomi.animesource.ConfigurableAnimeSource
@@ -12,7 +11,6 @@ import eu.kanade.tachiyomi.animesource.model.SEpisode
 import eu.kanade.tachiyomi.animesource.model.Video
 import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.network.GET
-import eu.kanade.tachiyomi.network.awaitSuccess
 import keiyoushi.utils.bodyAsText
 import keiyoushi.utils.getPreferencesLazy
 import keiyoushi.utils.parseAs
@@ -60,19 +58,14 @@ class StreamingUnity :
 
     // =============================== Latest ===============================
 
-    override fun latestUpdatesRequest(page: Int): Request {
-        return GET("$baseUrl/en/browse/latest", headers)
-    }
+    override fun latestUpdatesRequest(page: Int): Request = GET("$baseUrl/en/browse/latest", headers)
 
-    override fun latestUpdatesParse(response: Response): AnimesPage {
-        return popularAnimeParse(response)
-    }
+    override fun latestUpdatesParse(response: Response): AnimesPage = popularAnimeParse(response)
 
     // =============================== Search ===============================
 
-    override fun searchAnimeRequest(page: Int, query: String, filters: AnimeFilterList): Request {
-        return GET("$baseUrl/en/search?q=$query", headers)
-    }
+    override fun searchAnimeRequest(page: Int, query: String, filters: AnimeFilterList): Request =
+        GET("$baseUrl/en/search?q=$query", headers)
 
     override fun searchAnimeParse(response: Response): AnimesPage {
         val pageData = extractPageData(response.bodyAsText()) ?: return AnimesPage(emptyList(), false)
@@ -82,9 +75,7 @@ class StreamingUnity :
 
     // =========================== Anime Details ============================
 
-    override fun animeDetailsRequest(anime: SAnime): Request {
-        return GET("$baseUrl${anime.url}", headers)
-    }
+    override fun animeDetailsRequest(anime: SAnime): Request = GET("$baseUrl${anime.url}", headers)
 
     override fun animeDetailsParse(response: Response): SAnime {
         val pageData = extractPageData(response.bodyAsText()) ?: return SAnime.create()
@@ -108,7 +99,6 @@ class StreamingUnity :
             status = parseStatus(title.status)
             genre = pageData.props.genres?.joinToString(", ") { it.name }
 
-            // Set thumbnail from poster image from first season's first episode
             val poster = title.seasons.firstOrNull()
                 ?.episodes?.firstOrNull()
                 ?.images?.firstOrNull()
@@ -118,9 +108,7 @@ class StreamingUnity :
 
     // ============================== Episodes ==============================
 
-    override fun episodeListRequest(anime: SAnime): Request {
-        return GET("$baseUrl${anime.url}", headers)
-    }
+    override fun episodeListRequest(anime: SAnime): Request = GET("$baseUrl${anime.url}", headers)
 
     override fun episodeListParse(response: Response): List<SEpisode> {
         val pageData = extractPageData(response.bodyAsText()) ?: return emptyList()
@@ -130,14 +118,16 @@ class StreamingUnity :
         for (season in title.seasons) {
             val seasonEpisodes = season.episodes ?: continue
             for (ep in seasonEpisodes) {
-                episodes.add(SEpisode.create().apply {
-                    name = "S${season.number}:E${ep.number} - ${ep.name ?: "Episode ${ep.number}"}"
-                    episode_number = ep.number.toFloat()
-                    setUrlWithoutDomain(
-                        "/en/watch/${title.id}?episode_id=${ep.id}&season=${season.number}"
-                    )
-                    scanlator = "S${season.number}"
-                })
+                episodes.add(
+                    SEpisode.create().apply {
+                        name = "S${season.number}:E${ep.number} - ${ep.name ?: "Episode ${ep.number}"}"
+                        episode_number = ep.number.toFloat()
+                        setUrlWithoutDomain(
+                            "/en/watch/${title.id}?episode_id=${ep.id}&season=${season.number}",
+                        )
+                        scanlator = "S${season.number}"
+                    },
+                )
             }
         }
 
@@ -149,32 +139,25 @@ class StreamingUnity :
     override suspend fun getVideoList(episode: SEpisode): List<Video> {
         val extractor = StreamingUnityExtractor(client, headers)
 
-        // Parse the episode URL to get title_id and episode_id
         val watchUrlPath = episode.url
         val titleId = watchUrlPath.removePrefix("/en/watch/").substringBefore("?").toLongOrNull()
         val episodeId = watchUrlPath.substringAfter("episode_id=").substringBefore("&").toLongOrNull()
 
         if (titleId == null || episodeId == null) return emptyList()
 
-        // Build the iframe URL
         val iframeUrl = "$baseUrl/en/iframe/$titleId?episode_id=$episodeId"
 
         return extractor.getVideos(iframeUrl)
     }
 
-    override fun getVideoListParse(response: Response): List<Video> {
-        return emptyList()
-    }
+    override fun getVideoListParse(response: Response): List<Video> = emptyList()
 
     // ============================== Helpers ===============================
 
-    /**
-     * Extract Inertia.js data-page JSON from the HTML.
-     */
     private fun extractPageData(html: String): InertiaPage? {
         val pattern = Pattern.compile(
             """<div\s+id=["']app["']\s+data-page=["'](.*?)["']""",
-            Pattern.DOTALL
+            Pattern.DOTALL,
         )
         val matcher = pattern.matcher(html)
         if (!matcher.find()) return null
@@ -193,28 +176,22 @@ class StreamingUnity :
         }
     }
 
-    private fun parseStatus(status: String?): Int {
-        return when {
-            status == null -> SAnime.UNKNOWN
-            status.contains("Returning", ignoreCase = true) ||
-                status.contains("Ongoing", ignoreCase = true) ||
-                status.contains("Continuing", ignoreCase = true) -> SAnime.ONGOING
-            status.contains("Ended", ignoreCase = true) ||
-                status.contains("Canceled", ignoreCase = true) ||
-                status.contains("Completed", ignoreCase = true) -> SAnime.COMPLETED
-            else -> SAnime.UNKNOWN
-        }
+    private fun parseStatus(status: String?): Int = when {
+        status == null -> SAnime.UNKNOWN
+        status.contains("Returning", ignoreCase = true) ||
+            status.contains("Ongoing", ignoreCase = true) ||
+            status.contains("Continuing", ignoreCase = true) -> SAnime.ONGOING
+        status.contains("Ended", ignoreCase = true) ||
+            status.contains("Canceled", ignoreCase = true) ||
+            status.contains("Completed", ignoreCase = true) -> SAnime.COMPLETED
+        else -> SAnime.UNKNOWN
     }
 
-    override fun getAnimeUrl(anime: SAnime): String {
-        return anime.url
-    }
+    override fun getAnimeUrl(anime: SAnime): String = anime.url
 
     // ============================== Filters ===============================
 
-    override fun getFilterList(): AnimeFilterList {
-        return AnimeFilterList()
-    }
+    override fun getFilterList(): AnimeFilterList = AnimeFilterList()
 
     // ============================== Config ===============================
 
@@ -233,12 +210,10 @@ class StreamingUnity :
     override val versionId = 1
 }
 
-private fun TitleItem.toSAnime(): SAnime {
-    return SAnime.create().apply {
-        title = name
-        val cdnUrl = "https://cdn.streamingunity.dog"
-        val posterImage = images.find { it.type == "poster" }
-        thumbnail_url = posterImage?.let { "$cdnUrl/images/${it.filename}" }
-        url = "/en/titles/$id-$slug"
-    }
+private fun TitleItem.toSAnime(): SAnime = SAnime.create().apply {
+    title = name
+    val cdnUrl = "https://cdn.streamingunity.dog"
+    val posterImage = images.find { it.type == "poster" }
+    thumbnail_url = posterImage?.let { "$cdnUrl/images/${it.filename}" }
+    url = "/en/titles/$id-$slug"
 }
