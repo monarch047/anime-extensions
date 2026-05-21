@@ -21,8 +21,6 @@ import kotlinx.serialization.json.JsonObject
 import okhttp3.Request
 import okhttp3.Response
 import uy.kohesive.injekt.injectLazy
-import java.text.SimpleDateFormat
-import java.util.Locale
 import java.util.regex.Pattern
 
 class StreamingUnity :
@@ -56,12 +54,8 @@ class StreamingUnity :
 
     override fun popularAnimeParse(response: Response): AnimesPage {
         val pageData = extractPageData(response.bodyAsText()) ?: return AnimesPage(emptyList(), false)
-        val props = pageData.props
-
-        val titles = props.titles ?: props.sliders?.firstOrNull()?.titles ?: emptyList()
-        val animeList = titles.map { it.toSAnime() }
-
-        return AnimesPage(animeList, false)
+        val titles = pageData.props.titles ?: pageData.props.sliders?.firstOrNull()?.titles ?: emptyList()
+        return AnimesPage(titles.map { it.toSAnime() }, false)
     }
 
     // =============================== Latest ===============================
@@ -83,8 +77,7 @@ class StreamingUnity :
     override fun searchAnimeParse(response: Response): AnimesPage {
         val pageData = extractPageData(response.bodyAsText()) ?: return AnimesPage(emptyList(), false)
         val titles = pageData.props.titles ?: emptyList()
-        val animeList = titles.map { it.toSAnime() }
-        return AnimesPage(animeList, false)
+        return AnimesPage(titles.map { it.toSAnime() }, false)
     }
 
     // =========================== Anime Details ============================
@@ -100,7 +93,6 @@ class StreamingUnity :
         val cdnUrl = pageData.props.cdn_url
 
         return SAnime.create().apply {
-            // URL is already set from the request
             title = title.name
             description = buildString {
                 append(title.plot ?: "")
@@ -116,13 +108,11 @@ class StreamingUnity :
             status = parseStatus(title.status)
             genre = pageData.props.genres?.joinToString(", ") { it.name }
 
-            // Set thumbnail from poster image
-            if (title.seasons.isNotEmpty()) {
-                val season = title.seasons.first()
-                season.episodes?.firstOrNull()?.images?.firstOrNull()?.let { img ->
-                    thumbnail_url = "$cdnUrl/images/${img.filename}"
-                }
-            }
+            // Set thumbnail from poster image from first season's first episode
+            val poster = title.seasons.firstOrNull()
+                ?.episodes?.firstOrNull()
+                ?.images?.firstOrNull()
+            thumbnail_url = poster?.let { "$cdnUrl/images/${it.filename}" }
         }
     }
 
@@ -134,28 +124,20 @@ class StreamingUnity :
 
     override fun episodeListParse(response: Response): List<SEpisode> {
         val pageData = extractPageData(response.bodyAsText()) ?: return emptyList()
-        val props = pageData.props
-        val title = props.title ?: return emptyList()
+        val title = pageData.props.title ?: return emptyList()
 
         val episodes = mutableListOf<SEpisode>()
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-
         for (season in title.seasons) {
             val seasonEpisodes = season.episodes ?: continue
             for (ep in seasonEpisodes) {
-                val sEpisode = SEpisode.create().apply {
+                episodes.add(SEpisode.create().apply {
                     name = "S${season.number}:E${ep.number} - ${ep.name ?: "Episode ${ep.number}"}"
                     episode_number = ep.number.toFloat()
                     setUrlWithoutDomain(
                         "/en/watch/${title.id}?episode_id=${ep.id}&season=${season.number}"
                     )
                     scanlator = "S${season.number}"
-                    date_upload = ep.images?.firstOrNull()?.let {
-                        // Use episode image as thumbnail hint
-                        0L
-                    } ?: 0L
-                }
-                episodes.add(sEpisode)
+                })
             }
         }
 
@@ -167,47 +149,20 @@ class StreamingUnity :
     override suspend fun getVideoList(episode: SEpisode): List<Video> {
         val extractor = StreamingUnityExtractor(client, headers)
 
-        // Parse episode URL to get title_id and episode_id
-        val watchUrl = "$baseUrl${episode.url}"
-        val episodeId = episode.url.substringAfter("episode_id=").substringBefore("&").toLongOrNull()
-        val titleId = episode.url.removePrefix("/en/watch/").substringBefore("?").toLongOrNull()
+        // Parse the episode URL to get title_id and episode_id
+        val watchUrlPath = episode.url
+        val titleId = watchUrlPath.removePrefix("/en/watch/").substringBefore("?").toLongOrNull()
+        val episodeId = watchUrlPath.substringAfter("episode_id=").substringBefore("&").toLongOrNull()
 
         if (titleId == null || episodeId == null) return emptyList()
 
-        // First fetch the title page to get title name
-        val titleResponse = client.newCall(
-            GET("$baseUrl/en/titles/$titleId", headers)
-        ).awaitSuccess()
-        val pageData = extractPageData(titleResponse.bodyAsText())
-        val titleName = pageData?.props?.title?.name ?: "Unknown"
-
-        val seasonNum = episode.url.substringAfter("season=").toIntOrNull() ?: 1
-
-        // Build iframe URL
+        // Build the iframe URL
         val iframeUrl = "$baseUrl/en/iframe/$titleId?episode_id=$episodeId"
 
-        return extractor.getVideos(
-            iframeUrl = iframeUrl,
-            episodeId = episodeId,
-            episodeNum = episode.episode_number.toInt(),
-            titleName = titleName,
-            seasonNum = seasonNum,
-        ).ifEmpty {
-            // Fallback: try the watch page directly
-            val watchPageUrl = "$baseUrl/en/watch/$titleId?episode_id=$episodeId"
-            listOf(
-                Video(
-                    videoUrl = watchPageUrl,
-                    quality = "Watch Page",
-                    videoUrl = watchPageUrl,
-                    headers = headers,
-                )
-            )
-        }
+        return extractor.getVideos(iframeUrl)
     }
 
     override fun getVideoListParse(response: Response): List<Video> {
-        // Not used — we handle video extraction in getVideoList
         return emptyList()
     }
 
@@ -238,9 +193,6 @@ class StreamingUnity :
         }
     }
 
-    /**
-     * Parse status string to Aniyomi status int.
-     */
     private fun parseStatus(status: String?): Int {
         return when {
             status == null -> SAnime.UNKNOWN
@@ -278,12 +230,9 @@ class StreamingUnity :
         screen.addPreference(popularPref)
     }
 
-    // ============================== Extensions ============================
-
     override val versionId = 1
 }
 
-// Extension function to convert TitleItem to SAnime
 private fun TitleItem.toSAnime(): SAnime {
     return SAnime.create().apply {
         title = name
