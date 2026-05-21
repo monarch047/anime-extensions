@@ -3,7 +3,7 @@ package eu.kanade.tachiyomi.animeextension.en.streamingunity
 import eu.kanade.tachiyomi.animesource.model.Video
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.awaitSuccess
-import keiyoushi.utils.bodyAsText
+import keiyoushi.utils.bodyString
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import java.util.regex.Pattern
@@ -15,7 +15,7 @@ class StreamingUnityExtractor(
 
     suspend fun getVideos(iframeUrl: String): List<Video> {
         val iframeResponse = client.newCall(GET(iframeUrl, headers)).awaitSuccess()
-        val iframeHtml = iframeResponse.bodyAsText()
+        val iframeHtml = iframeResponse.bodyString()
 
         val vixcloudUrl = extractVixcloudUrl(iframeHtml) ?: return emptyList()
 
@@ -23,7 +23,7 @@ class StreamingUnityExtractor(
             .set("Referer", iframeUrl)
             .build()
         val vixcloudResponse = client.newCall(GET(vixcloudUrl, vixHeaders)).awaitSuccess()
-        val vixcloudHtml = vixcloudResponse.bodyAsText()
+        val vixcloudHtml = vixcloudResponse.bodyString()
 
         val token = extractJsVar(vixcloudHtml, "token") ?: return emptyList()
         val expires = extractJsVar(vixcloudHtml, "expires") ?: return emptyList()
@@ -35,7 +35,7 @@ class StreamingUnityExtractor(
             .set("Origin", "https://vixcloud.co")
             .build()
         val playlistResponse = client.newCall(GET(masterUrl, playlistHeaders)).awaitSuccess()
-        val playlistBody = playlistResponse.bodyAsText()
+        val playlistBody = playlistResponse.bodyString()
 
         return parseMasterPlaylist(playlistBody, token, expires)
     }
@@ -105,7 +105,7 @@ class StreamingUnityExtractor(
 
             videos.add(
                 Video(
-                    videoUrl = realUrl,
+                    url = realUrl,
                     quality = quality,
                     videoUrl = realUrl,
                     headers = headers,
@@ -127,7 +127,7 @@ class StreamingUnityExtractor(
                         "?type=video&rendition=${rendition}p&token=$token&expires=$expires&b=1"
                     videos.add(
                         Video(
-                            videoUrl = audioUrl,
+                            url = audioUrl,
                             quality = label,
                             videoUrl = audioUrl,
                             headers = headers,
@@ -140,7 +140,7 @@ class StreamingUnityExtractor(
         if (videos.isEmpty()) {
             videos.add(
                 Video(
-                    videoUrl = playlistBody,
+                    url = playlistBody,
                     quality = "HLS",
                     videoUrl = playlistBody,
                     headers = headers,

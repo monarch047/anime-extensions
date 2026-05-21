@@ -11,11 +11,10 @@ import eu.kanade.tachiyomi.animesource.model.SEpisode
 import eu.kanade.tachiyomi.animesource.model.Video
 import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.network.GET
-import keiyoushi.utils.bodyAsText
+import keiyoushi.utils.bodyString
 import keiyoushi.utils.getPreferencesLazy
-import keiyoushi.utils.parseAs
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import okhttp3.Request
 import okhttp3.Response
 import uy.kohesive.injekt.injectLazy
@@ -51,7 +50,7 @@ class StreamingUnity :
     }
 
     override fun popularAnimeParse(response: Response): AnimesPage {
-        val pageData = extractPageData(response.bodyAsText()) ?: return AnimesPage(emptyList(), false)
+        val pageData = extractPageData(response.bodyString()) ?: return AnimesPage(emptyList(), false)
         val titles = pageData.props.titles ?: pageData.props.sliders?.firstOrNull()?.titles ?: emptyList()
         return AnimesPage(titles.map { it.toSAnime() }, false)
     }
@@ -67,7 +66,7 @@ class StreamingUnity :
     override fun searchAnimeRequest(page: Int, query: String, filters: AnimeFilterList): Request = GET("$baseUrl/en/search?q=$query", headers)
 
     override fun searchAnimeParse(response: Response): AnimesPage {
-        val pageData = extractPageData(response.bodyAsText()) ?: return AnimesPage(emptyList(), false)
+        val pageData = extractPageData(response.bodyString()) ?: return AnimesPage(emptyList(), false)
         val titles = pageData.props.titles ?: emptyList()
         return AnimesPage(titles.map { it.toSAnime() }, false)
     }
@@ -77,28 +76,28 @@ class StreamingUnity :
     override fun animeDetailsRequest(anime: SAnime): Request = GET("$baseUrl${anime.url}", headers)
 
     override fun animeDetailsParse(response: Response): SAnime {
-        val pageData = extractPageData(response.bodyAsText()) ?: return SAnime.create()
-        val title = pageData.props.title ?: return SAnime.create()
+        val pageData = extractPageData(response.bodyString()) ?: return SAnime.create()
+        val titleDetail = pageData.props.title ?: return SAnime.create()
 
         val cdnUrl = pageData.props.cdn_url
 
         return SAnime.create().apply {
-            title = title.name
+            title = titleDetail.name
             description = buildString {
-                append(title.plot ?: "")
+                append(titleDetail.plot ?: "")
                 append("\n\n")
-                append("Score: ${title.score ?: "?"}\u2605")
-                append("\nStatus: ${title.status ?: "Unknown"}")
-                append("\nType: ${title.type.uppercase()}")
-                append("\nViews: ${title.views ?: "?"}")
-                title.release_date?.let { append("\nRelease: $it") }
-                title.last_air_date?.let { append("\nLast aired: $it") }
-                title.age?.let { append("\nAge rating: $it+") }
+                append("Score: ${titleDetail.score ?: "?"}\u2605")
+                append("\nStatus: ${titleDetail.status ?: "Unknown"}")
+                append("\nType: ${titleDetail.type.uppercase()}")
+                append("\nViews: ${titleDetail.views ?: "?"}")
+                titleDetail.release_date?.let { append("\nRelease: $it") }
+                titleDetail.last_air_date?.let { append("\nLast aired: $it") }
+                titleDetail.age?.let { append("\nAge rating: $it+") }
             }
-            status = parseStatus(title.status)
+            status = parseStatus(titleDetail.status)
             genre = pageData.props.genres?.joinToString(", ") { it.name }
 
-            val poster = title.seasons.firstOrNull()
+            val poster = titleDetail.seasons.firstOrNull()
                 ?.episodes?.firstOrNull()
                 ?.images?.firstOrNull()
             thumbnail_url = poster?.let { "$cdnUrl/images/${it.filename}" }
@@ -110,11 +109,11 @@ class StreamingUnity :
     override fun episodeListRequest(anime: SAnime): Request = GET("$baseUrl${anime.url}", headers)
 
     override fun episodeListParse(response: Response): List<SEpisode> {
-        val pageData = extractPageData(response.bodyAsText()) ?: return emptyList()
-        val title = pageData.props.title ?: return emptyList()
+        val pageData = extractPageData(response.bodyString()) ?: return emptyList()
+        val titleDetail = pageData.props.title ?: return emptyList()
 
         val episodes = mutableListOf<SEpisode>()
-        for (season in title.seasons) {
+        for (season in titleDetail.seasons) {
             val seasonEpisodes = season.episodes ?: continue
             for (ep in seasonEpisodes) {
                 episodes.add(
@@ -122,7 +121,7 @@ class StreamingUnity :
                         name = "S${season.number}:E${ep.number} - ${ep.name ?: "Episode ${ep.number}"}"
                         episode_number = ep.number.toFloat()
                         setUrlWithoutDomain(
-                            "/en/watch/${title.id}?episode_id=${ep.id}&season=${season.number}",
+                            "/en/watch/${titleDetail.id}?episode_id=${ep.id}&season=${season.number}",
                         )
                         scanlator = "S${season.number}"
                     },
@@ -149,8 +148,6 @@ class StreamingUnity :
         return extractor.getVideos(iframeUrl)
     }
 
-    override fun getVideoListParse(response: Response): List<Video> = emptyList()
-
     // ============================== Helpers ===============================
 
     private fun extractPageData(html: String): InertiaPage? {
@@ -169,7 +166,7 @@ class StreamingUnity :
             .replace("&gt;", ">")
 
         return try {
-            json.parseAs<InertiaPage>(JsonObject.parseAs(rawJson))
+            json.decodeFromString<InertiaPage>(rawJson)
         } catch (e: Exception) {
             null
         }
