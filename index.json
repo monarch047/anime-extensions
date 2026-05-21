@@ -1,0 +1,19 @@
+[
+  {
+    "name": "Aniyomi: StreamingUnity",
+    "pkg": "eu.kanade.tachiyomi.animeextension.en.streamingunity",
+    "apk": "apk/aniyomi-en.streamingunity-v14.1-debug.apk",
+    "lang": "en",
+    "code": 1,
+    "version": "14.1",
+    "nsfw": 0,
+    "sources": [
+      {
+        "name": "StreamingUnity",
+        "lang": "en",
+        "id": "8542735178285060053",
+        "baseUrl": "https://streamingunity.dog"
+      }
+    ]
+  }
+]
