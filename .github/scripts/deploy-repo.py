@@ -30,6 +30,10 @@ def run(cmd, check=True):
         exit(result.returncode)
     return result
 
+# Set git config for CI
+run("git config user.name 'github-actions[bot]'", check=False)
+run("git config user.email 'github-actions[bot]@users.noreply.github.com'", check=False)
+
 # Check if repo branch exists remotely
 result = run("git rev-parse --verify origin/repo", check=False)
 if result.returncode == 0:
