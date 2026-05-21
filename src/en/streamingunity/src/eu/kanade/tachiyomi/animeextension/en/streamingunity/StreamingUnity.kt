@@ -64,8 +64,7 @@ class StreamingUnity :
 
     // =============================== Search ===============================
 
-    override fun searchAnimeRequest(page: Int, query: String, filters: AnimeFilterList): Request =
-        GET("$baseUrl/en/search?q=$query", headers)
+    override fun searchAnimeRequest(page: Int, query: String, filters: AnimeFilterList): Request = GET("$baseUrl/en/search?q=$query", headers)
 
     override fun searchAnimeParse(response: Response): AnimesPage {
         val pageData = extractPageData(response.bodyAsText()) ?: return AnimesPage(emptyList(), false)
