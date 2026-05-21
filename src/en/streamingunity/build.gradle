@@ -1,0 +1,7 @@
+ext {
+    extName = 'StreamingUnity'
+    extClass = '.StreamingUnity'
+    extVersionCode = 1
+}
+
+apply from: "$rootDir/common.gradle"

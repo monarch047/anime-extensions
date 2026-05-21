@@ -1,0 +1,40 @@
+name: Build StreamingUnity
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/en/streamingunity/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build StreamingUnity
+        run: |
+          ./gradlew :src:en:streamingunity:assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: streamingunity-apk
+          path: src/en/streamingunity/build/outputs/apk/debug/*.apk
+          retention-days: 30
