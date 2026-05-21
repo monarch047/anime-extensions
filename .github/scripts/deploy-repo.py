@@ -54,6 +54,6 @@ shutil.rmtree(tmpdir)
 
 run("git add -A")
 run('git commit -m "deploy: StreamingUnity"', check=False)
-run("git push origin repo --force")
+run("git push origin HEAD:repo --force")
 
 print("Deployed to repo branch")
