@@ -50,6 +50,7 @@ data class TitleDetail(
     val seasons_count: Int? = null,
     val seasons: List<Season> = emptyList(),
     val trailers: List<Trailer>? = null,
+    val images: List<Image>? = null,
 )
 
 /**

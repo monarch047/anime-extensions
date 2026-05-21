@@ -97,9 +97,7 @@ class StreamingUnity :
             status = parseStatus(titleDetail.status)
             genre = pageData.props.genres?.joinToString(", ") { it.name }
 
-            val poster = titleDetail.seasons.firstOrNull()
-                ?.episodes?.firstOrNull()
-                ?.images?.firstOrNull()
+            val poster = titleDetail.images?.find { it.type == "poster" }
             thumbnail_url = poster?.let { "$cdnUrl/images/${it.filename}" }
         }
     }
@@ -113,17 +111,20 @@ class StreamingUnity :
         val titleDetail = pageData.props.title ?: return emptyList()
 
         val episodes = mutableListOf<SEpisode>()
-        for (season in titleDetail.seasons) {
-            val seasonEpisodes = season.episodes ?: continue
+
+        // Episodes are in props.loadedSeason, not in title.seasons[].episodes
+        val loadedSeason = pageData.props.loadedSeason
+        if (loadedSeason != null) {
+            val seasonEpisodes = loadedSeason.episodes ?: emptyList()
             for (ep in seasonEpisodes) {
                 episodes.add(
                     SEpisode.create().apply {
-                        name = "S${season.number}:E${ep.number} - ${ep.name ?: "Episode ${ep.number}"}"
+                        name = "S${loadedSeason.number}:E${ep.number} - ${ep.name ?: "Episode ${ep.number}"}"
                         episode_number = ep.number.toFloat()
                         setUrlWithoutDomain(
-                            "/en/watch/${titleDetail.id}?episode_id=${ep.id}&season=${season.number}",
+                            "/en/watch/${titleDetail.id}?episode_id=${ep.id}&season=${loadedSeason.number}",
                         )
-                        scanlator = "S${season.number}"
+                        scanlator = "S${loadedSeason.number}"
                     },
                 )
             }
