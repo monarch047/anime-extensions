@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="eu.kanade.tachiyomi.animeextension.en.streamingunity"
+    android:versionCode="1"
+    android:versionName="14.1" >
+
+    <uses-sdk
+        android:minSdkVersion="21"
+        android:targetSdkVersion="34" />
+
+    <uses-feature android:name="tachiyomi.animeextension" />
+
+    <application
+        android:allowBackup="false"
+        android:debuggable="true"
+        android:extractNativeLibs="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Aniyomi: StreamingUnity" >
+        <meta-data
+            android:name="tachiyomi.animeextension.class"
+            android:value=".StreamingUnity" />
+        <meta-data
+            android:name="tachiyomi.animeextension.nsfw"
+            android:value="0" />
+    </application>
+
+</manifest>

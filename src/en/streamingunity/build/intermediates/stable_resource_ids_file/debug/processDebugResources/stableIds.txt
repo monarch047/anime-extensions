@@ -1,0 +1,1 @@
+eu.kanade.tachiyomi.animeextension.en.streamingunity:mipmap/ic_launcher = 0x7f010000

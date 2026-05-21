@@ -1,0 +1,8 @@
+eu.kanade.tachiyomi.animeextension.streamingunity-debug-0 /home/runner/work/anime-extensions/anime-extensions/core/build/intermediates/packaged_res/debug/packageDebugResources
+eu.kanade.tachiyomi.animeextension.streamingunity-pngs-1 /home/runner/work/anime-extensions/anime-extensions/src/en/streamingunity/build/generated/res/pngs/debug
+eu.kanade.tachiyomi.animeextension.streamingunity-updated_navigation_xml-2 /home/runner/work/anime-extensions/anime-extensions/src/en/streamingunity/build/generated/updated_navigation_xml/debug
+eu.kanade.tachiyomi.animeextension.streamingunity-packageDebugResources-3 /home/runner/work/anime-extensions/anime-extensions/src/en/streamingunity/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+eu.kanade.tachiyomi.animeextension.streamingunity-packageDebugResources-4 /home/runner/work/anime-extensions/anime-extensions/src/en/streamingunity/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+eu.kanade.tachiyomi.animeextension.streamingunity-debug-5 /home/runner/work/anime-extensions/anime-extensions/src/en/streamingunity/build/intermediates/merged_res/debug/mergeDebugResources
+eu.kanade.tachiyomi.animeextension.streamingunity-streamingunity-6 /home/runner/work/anime-extensions/anime-extensions/src/en/streamingunity/res
+eu.kanade.tachiyomi.animeextension.streamingunity-debug-7 /home/runner/work/anime-extensions/anime-extensions/src/en/streamingunity/src/debug/res

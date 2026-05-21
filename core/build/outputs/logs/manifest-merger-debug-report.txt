@@ -1,0 +1,40 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:2:1-13:12
+INJECTED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:2:1-13:12
+	package
+		INJECTED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:2:11-69
+uses-feature#tachiyomi.animeextension
+ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:4:5-61
+	android:name
+		ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:4:19-58
+application
+ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:6:5-11:19
+	android:label
+		ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:6:81-107
+	android:icon
+		ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:6:18-52
+	android:allowBackup
+		ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:6:53-80
+meta-data#tachiyomi.animeextension.class
+ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:8:9-96
+	android:value
+		ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:8:66-93
+	android:name
+		ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:8:20-65
+meta-data#tachiyomi.animeextension.nsfw
+ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:9:9-91
+	android:value
+		ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:9:65-88
+	android:name
+		ADDED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:9:20-64
+uses-sdk
+INJECTED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml
+INJECTED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml

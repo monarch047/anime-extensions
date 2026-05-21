@@ -1,0 +1,33 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="keiyoushi.core" >
+4
+5    <uses-sdk android:minSdkVersion="21" />
+6
+7    <uses-feature android:name="tachiyomi.animeextension" />
+7-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:4:5-61
+7-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:4:19-58
+8
+9    <application
+9-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:6:5-11:19
+10        android:allowBackup="false"
+10-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:6:53-80
+11        android:icon="@mipmap/ic_launcher"
+11-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:6:18-52
+12        android:label="${appName}" >
+12-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:6:81-107
+13        <meta-data
+13-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:8:9-96
+14            android:name="tachiyomi.animeextension.class"
+14-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:8:20-65
+15            android:value="${extClass}" />
+15-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:8:66-93
+16        <meta-data
+16-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:9:9-91
+17            android:name="tachiyomi.animeextension.nsfw"
+17-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:9:20-64
+18            android:value="${nsfw}" />
+18-->/home/runner/work/anime-extensions/anime-extensions/core/src/main/AndroidManifest.xml:9:65-88
+19    </application>
+20
+21</manifest>
