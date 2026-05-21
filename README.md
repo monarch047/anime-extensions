@@ -1,82 +1,77 @@
-<div align="center">
+# StreamingUnity Extension for Aniyomi
 
-| Install on Aniyomi | Install on Anikku | Build | Discord |
-|:------------------:|:-----------------:|:-----:|:-------:|
-| [![Install](https://img.shields.io/badge/Click%20here%20to%20install%20repo-gray?style=flat&labelColor=red)](https://intradeus.github.io/http-protocol-redirector/?r=aniyomi://add-repo?url=https://raw.githubusercontent.com/yuzono/anime-repo/repo/index.min.json) | [![Install](https://img.shields.io/badge/Click%20here%20to%20install%20repo-gray?style=flat&labelColor=red)](https://intradeus.github.io/http-protocol-redirector/?r=anikku://add-repo?url=https://raw.githubusercontent.com/yuzono/anime-repo/repo/index.min.json) | ![CI](https://github.com/yuzono/anime-extensions/actions/workflows/build_push.yml/badge.svg) | [![Discord](https://img.shields.io/discord/1377136877491982366.svg?label=&labelColor=6A7EC2&color=7389D8&logo=discord&logoColor=FFFFFF)](https://discord.gg/85MZhUX688) |
+[![Build](https://github.com/monarch047/anime-extensions/actions/workflows/build-streamingunity.yml/badge.svg)](https://github.com/monarch047/anime-extensions/actions/workflows/build-streamingunity.yml)
 
-[![Sponsor me on GitHub](https://custom-icon-badges.demolab.com/badge/-Sponsor-ea4aaa?style=for-the-badge&logo=heart&logoColor=white)](https://github.com/sponsors/cuong-tran "Sponsor me on GitHub")
+Custom [Aniyomi](https://github.com/aniyomiorg/aniyomi) extension for [StreamingUnity](https://streamingunity.dog) — a Laravel/Inertia.js SPA with VixCloud HLS streaming.
 
-![Visitor Count](https://count.getloli.com/get/@yuzono?theme=capoo-2)
-</div>
+## Features
 
-# ![app icon](./.github/readme-images/app-icon.png)Anikku/Aniyomi Extensions
-Anikku/Aniyomi is a free and open source manga reader for Android 6.0 and above.
+- Popular/Trending/Latest/Top 10 browsing
+- Search by title
+- Episode lists with season grouping
+- HLS video extraction (480p/720p/1080p)
+- Quality selector in preferences
 
-This repository contains the available extension catalogues for the [Anikku](https://github.com/komikku-app/anikku) or [Aniyomi](https://github.com/aniyomiorg/aniyomi) forks.
+## Installation
 
-## Recommend App
+### Option 1: Add repo URL (auto-updates)
 
-### [Anikku](https://github.com/komikku-app/anikku)
+1. Open Aniyomi → Browse → Extensions
+2. Tap the menu (⋮) → **Add extension repo**
+3. Enter the following URL:
 
-### [Aniyomi](https://github.com/aniyomiorg/aniyomi)
-
-## How to add the repo
-
-**If you are new to repository/extensions, please read the [Yūzōnō Getting Started guide](https://yuzono.github.io/docs/guides/getting-started#adding-the-extension-repo) first.**
-
-* You can add our repo by visiting the [Yūzōnō Website](https://yuzono.github.io/add-repo-ani)
-* Otherwise, copy & paste the following URL:
-
-```html
-https://raw.githubusercontent.com/yuzono/anime-repo/repo/index.min.json
+```
+https://raw.githubusercontent.com/monarch047/anime-extensions/repo/index.min.json
 ```
 
-### Manual downloads
+Or click the link below from your Android device:
 
-If you prefer to directly download the APK files, they are available via [website](https://yuzono.github.io/extensions-aniyomi/) or directly in this GitHub repository in the [`repo` branch](https://github.com/yuzono/anime-repo/tree/repo/apk).
+[![Install](https://img.shields.io/badge/Install%20repo-red?style=flat-square)](https://intradeus.github.io/http-protocol-redirector/?r=aniyomi://add-repo?url=https://raw.githubusercontent.com/monarch047/anime-extensions/repo/index.min.json)
 
-## Requests
+### Option 2: Manual APK
 
-To request a new source or bug fix, [create an issue](https://github.com/yuzono/aniyomi-extensions/issues/new/choose).
+Download the latest APK from the [Actions tab](https://github.com/monarch047/anime-extensions/actions) and install it manually.
 
-Please note that creating an issue does not mean that the source will be added or fixed in a timely
-fashion, because the work is volunteer-based. Some sources may also be impossible to do or prohibitively
-difficult to maintain.
+## Development
 
-If you would like to see a request fulfilled and have the necessary skills to do so, consider contributing!
-Issues are up-for-grabs for any developer if there is no assigned user already.
+```bash
+# Build the extension
+./gradlew :src:en:streamingunity:assembleRelease
 
-## Contributing
+# Build with formatting check
+./gradlew :src:en:streamingunity:spotlessApply
+./gradlew :src:en:streamingunity:assembleRelease -x spotlessKotlinCheck
+```
 
-Contributions are welcome!
+## Source Structure
 
-Check out the repo's [issue backlog](https://github.com/yuzono/anime-extensions/issues) for source requests and bug reports.
+```
+src/en/streamingunity/
+├── build.gradle
+├── res/                    # App icons
+└── src/
+    └── eu/kanade/tachiyomi/animeextension/en/streamingunity/
+        ├── StreamingUnity.kt           # Main source
+        ├── StreamingUnityDto.kt        # Inertia.js data classes
+        ├── StreamingUnityExtractor.kt  # VixCloud HLS extraction
+        └── StreamingUnityUrlActivity.kt
+```
 
-To get started with development, see [CONTRIBUTING.md](./CONTRIBUTING.md).
+## Site Info
 
-It might also be good to read our [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
+| Route | Page |
+|-------|------|
+| `/en` | Home (trending, latest, top10) |
+| `/en/titles/{id}-{slug}` | Title details |
+| `/en/browse/{name}` | Browse/category |
+| `/en/search?q=...` | Search |
+| `/en/watch/{id}?episode_id={eid}` | Watch / iframe |
 
-## License
+Data source: `<div id="app" data-page='{...JSON...}'>` (Inertia.js props — no API calls or browser rendering needed).
 
-    Copyright 2015 Javier Tomás
+## Video Extraction
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-## Disclaimer
-
-This project does not have any affiliation with the content providers available.
-
-This project is not affiliated with Anikku/Aniyomi. Don't ask for help about these extensions at the
-official support means of Anikku/Aniyomi. All credits to the codebase goes to the original contributors.
-
-The developer of this application does not have any affiliation with the content providers available.
+1. Fetch `/en/iframe/{title_id}?episode_id={ep_id}` → VixCloud embed URL
+2. Parse VixCloud embed → extract `token`, `expires`, `playlist` URL
+3. Build HLS master playlist URL with token
+4. Parse `#EXT-X-STREAM-INF` for quality variants

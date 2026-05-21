@@ -1,11 +1,5 @@
 /**
- * Add or remove modules to load as needed for local development here.
- */
-loadAllIndividualExtensions()
-// loadIndividualExtension("all", "jellyfin")
-
-/**
- * ===================================== COMMON CONFIGURATION ======================================
+ * StreamingUnity extension only.
  */
 include(":core")
 
@@ -15,19 +9,8 @@ File(rootDir, "lib").eachDir { include("lib:${it.name}") }
 // Load all modules under /lib-multisrc
 File(rootDir, "lib-multisrc").eachDir { include("lib-multisrc:${it.name}") }
 
-/**
- * ======================================== HELPER FUNCTION ========================================
- */
-fun loadAllIndividualExtensions() {
-    File(rootDir, "src").eachDir { dir ->
-        dir.eachDir { subdir ->
-            loadIndividualExtension(dir.name, subdir.name)
-        }
-    }
-}
-fun loadIndividualExtension(lang: String, name: String) {
-    include("src:$lang:$name")
-}
+// Only load the StreamingUnity extension
+include("src:en:streamingunity")
 
 fun File.eachDir(block: (File) -> Unit) {
     val files = listFiles() ?: return

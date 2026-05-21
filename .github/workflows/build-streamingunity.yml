@@ -6,6 +6,13 @@ on:
       - master
     paths:
       - 'src/en/streamingunity/**'
+      - 'core/**'
+      - 'lib/**'
+      - 'lib-multisrc/**'
+      - 'common.gradle'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - '.github/workflows/build-streamingunity.yml'
   workflow_dispatch:
 
 jobs:
@@ -28,14 +35,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Format + Build StreamingUnity
+      - name: Build release APK
         run: |
-          ./gradlew :src:en:streamingunity:spotlessApply
-          ./gradlew :src:en:streamingunity:assembleDebug -x spotlessKotlinCheck
+          ./gradlew :src:en:streamingunity:assembleRelease -x spotlessKotlinCheck
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: streamingunity-apk
-          path: src/en/streamingunity/build/outputs/apk/debug/*.apk
-          retention-days: 30
+      - name: Generate index.json
+        run: python .github/scripts/generate-index.py
+
+      - name: Deploy to repo branch
+        run: python .github/scripts/deploy-repo.py
