@@ -35,9 +35,9 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build release APK
+      - name: Build debug APK
         run: |
-          ./gradlew :src:en:streamingunity:assembleRelease -x spotlessKotlinCheck
+          ./gradlew :src:en:streamingunity:assembleDebug -x spotlessKotlinCheck
 
       - name: Generate index.json
         run: python .github/scripts/generate-index.py

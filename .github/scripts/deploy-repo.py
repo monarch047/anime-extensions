@@ -6,9 +6,7 @@ import subprocess
 import shutil
 
 # Find APK
-apk_files = glob.glob("src/en/streamingunity/build/outputs/apk/release/*.apk")
-if not apk_files:
-    apk_files = glob.glob("src/en/streamingunity/build/outputs/apk/debug/*.apk")
+apk_files = glob.glob("src/en/streamingunity/build/outputs/apk/debug/*.apk")
 if not apk_files:
     print("No APK found!")
     exit(1)
