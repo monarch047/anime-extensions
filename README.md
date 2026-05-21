@@ -21,12 +21,17 @@ Custom [Aniyomi](https://github.com/aniyomiorg/aniyomi) extension for [Streaming
 3. Enter the following URL:
 
 ```
-https://raw.githubusercontent.com/monarch047/anime-extensions/repo/index.min.json
+https://monarch047.github.io/anime-extensions/index.min.json
 ```
 
 Or click the link below from your Android device:
 
-[![Install](https://img.shields.io/badge/Install%20repo-red?style=flat-square)](https://intradeus.github.io/http-protocol-redirector/?r=aniyomi://add-repo?url=https://raw.githubusercontent.com/monarch047/anime-extensions/repo/index.min.json)
+[![Install](https://img.shields.io/badge/Install%20repo-red?style=flat-square)](https://intradeus.github.io/http-protocol-redirector/?r=aniyomi://add-repo?url=https://monarch047.github.io/anime-extensions/index.min.json)
+
+> If the GitHub Pages URL doesn't work, use the raw URL instead:
+> ```
+> https://raw.githubusercontent.com/monarch047/anime-extensions/repo/index.min.json
+> ```
 
 ### Option 2: Manual APK
 
