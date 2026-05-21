@@ -87,7 +87,7 @@ class StreamingUnity :
             description = buildString {
                 append(title.plot ?: "")
                 append("\n\n")
-                append("Score: ${title.score ?: "?"}★")
+                append("Score: ${title.score ?: "?"}\u2605")
                 append("\nStatus: ${title.status ?: "Unknown"}")
                 append("\nType: ${title.type.uppercase()}")
                 append("\nViews: ${title.views ?: "?"}")
