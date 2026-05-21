@@ -30,9 +30,16 @@ def run(cmd, check=True):
         exit(result.returncode)
     return result
 
-# Set git config for CI
+# Set git config for CI and authenticate with GITHUB_TOKEN
 run("git config user.name 'github-actions[bot]'", check=False)
 run("git config user.email 'github-actions[bot]@users.noreply.github.com'", check=False)
+
+# Use GITHUB_TOKEN for authenticated push
+token = os.environ.get("GITHUB_TOKEN", "")
+if token:
+    repo_url = run("git remote get-url origin").stdout.strip()
+    authed_url = repo_url.replace("https://", f"https://oauth2:{token}@")
+    run(f"git remote set-url origin {authed_url}")
 
 # Check if repo branch exists remotely
 result = run("git rev-parse --verify origin/repo", check=False)
