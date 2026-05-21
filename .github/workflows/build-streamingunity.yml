@@ -28,9 +28,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build StreamingUnity
+      - name: Format + Build StreamingUnity
         run: |
-          ./gradlew :src:en:streamingunity:assembleDebug
+          ./gradlew :src:en:streamingunity:spotlessApply
+          ./gradlew :src:en:streamingunity:assembleDebug -x spotlessKotlinCheck
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
