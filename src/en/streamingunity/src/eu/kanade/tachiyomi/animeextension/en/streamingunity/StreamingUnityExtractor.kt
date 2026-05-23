@@ -14,13 +14,18 @@ class StreamingUnityExtractor(
 ) {
 
     suspend fun getVideos(iframeUrl: String): List<Video> {
+        // Step 1: Fetch the StreamingUnity iframe page
         val iframeResponse = client.newCall(GET(iframeUrl, headers)).awaitSuccess()
         val iframeHtml = iframeResponse.bodyString()
 
         val vixcloudUrl = extractVixcloudUrl(iframeHtml) ?: return emptyList()
 
+        // Step 2: Fetch the vixcloud embed page.
+        // Origin must be the StreamingUnity domain (the true embedding origin),
+        // not vixcloud.co itself (which would be a self-referencing origin).
         val vixHeaders = headers.newBuilder()
             .set("Referer", iframeUrl)
+            .set("Origin", "https://streamingunity.dog")
             .build()
         val vixcloudResponse = client.newCall(GET(vixcloudUrl, vixHeaders)).awaitSuccess()
         val vixcloudHtml = vixcloudResponse.bodyString()
@@ -31,13 +36,54 @@ class StreamingUnityExtractor(
 
         val masterUrl = "$playlistBase&token=$token&expires=$expires&h=1&lang=en"
 
+        // Step 3: Fetch the HLS master playlist to discover available qualities.
+        // Referer = the vixcloud embed page; Origin = StreamingUnity (true cross-origin source).
         val playlistHeaders = vixHeaders.newBuilder()
-            .set("Origin", "https://vixcloud.co")
+            .set("Referer", vixcloudUrl)
+            .set("Origin", "https://streamingunity.dog")
             .build()
         val playlistResponse = client.newCall(GET(masterUrl, playlistHeaders)).awaitSuccess()
         val playlistBody = playlistResponse.bodyString()
 
-        return parseMasterPlaylist(playlistBody, token, expires)
+        if (!playlistBody.contains("#EXTM3U")) return emptyList()
+
+        // Step 4: Extract quality labels from the master playlist.
+        // IMPORTANT: We pass the master playlist URL to the video player, NOT individual
+        // variant stream URLs. HLS variant URLs carry video-only segments; audio tracks
+        // are linked via #EXT-X-MEDIA in the master playlist and ExoPlayer needs to
+        // read the full master to reconstruct the audio+video association.
+        val qualities = mutableListOf<String>()
+        val streamInfPattern = Pattern.compile(
+            "#EXT-X-STREAM-INF:.*?RESOLUTION=(\\d+)x(\\d+)",
+            Pattern.DOTALL,
+        )
+        val streamInfMatcher = streamInfPattern.matcher(playlistBody)
+        while (streamInfMatcher.find()) {
+            qualities.add("${streamInfMatcher.group(2)}p")
+        }
+
+        if (qualities.isNotEmpty()) {
+            return qualities
+                .sortedByDescending { parseHeight(it) }
+                .map { quality ->
+                    Video(
+                        url = masterUrl,
+                        quality = quality,
+                        videoUrl = masterUrl,
+                        headers = playlistHeaders,
+                    )
+                }
+        }
+
+        // Fallback: return the master URL as a single HLS entry
+        return listOf(
+            Video(
+                url = masterUrl,
+                quality = "HLS",
+                videoUrl = masterUrl,
+                headers = playlistHeaders,
+            ),
+        )
     }
 
     private fun extractVixcloudUrl(html: String): String? {
@@ -79,81 +125,6 @@ class StreamingUnityExtractor(
         } else {
             null
         }
-    }
-
-    private fun parseMasterPlaylist(
-        playlistBody: String,
-        token: String,
-        expires: String,
-    ): List<Video> {
-        val videos = mutableListOf<Video>()
-
-        if (!playlistBody.contains("#EXTM3U")) return emptyList()
-
-        val streamInfPattern = Pattern.compile(
-            "#EXT-X-STREAM-INF:.*?RESOLUTION=(\\d+)x(\\d+).*?\\n(https?://[^\\n]+)",
-            Pattern.DOTALL,
-        )
-        val streamInfMatcher = streamInfPattern.matcher(playlistBody)
-
-        while (streamInfMatcher.find()) {
-            val height = streamInfMatcher.group(2)
-            val rawUrl = streamInfMatcher.group(3).trim()
-            val quality = "${height}p"
-
-            val realUrl = rawUrl.replace("***", token) + "&expires=$expires"
-
-            videos.add(
-                Video(
-                    url = realUrl,
-                    quality = quality,
-                    videoUrl = realUrl,
-                    headers = headers,
-                ),
-            )
-        }
-
-        if (videos.isEmpty() && playlistBody.contains("EXT-X-MEDIA")) {
-            for (quality in listOf("1080p" to 1080, "720p" to 720, "480p" to 480)) {
-                val (label) = quality
-                val rendition = label.replace("p", "")
-                val baseUrlMatch = Pattern.compile(
-                    """type=audio&rendition=\w+&token=\*\*\*&expires=(\d+)""",
-                    Pattern.DOTALL,
-                ).matcher(playlistBody)
-
-                if (baseUrlMatch.find()) {
-                    val audioUrl = "https://vixcloud.co/playlist/${extractVideoId(playlistBody)}" +
-                        "?type=video&rendition=${rendition}p&token=$token&expires=$expires&b=1"
-                    videos.add(
-                        Video(
-                            url = audioUrl,
-                            quality = label,
-                            videoUrl = audioUrl,
-                            headers = headers,
-                        ),
-                    )
-                }
-            }
-        }
-
-        if (videos.isEmpty()) {
-            videos.add(
-                Video(
-                    url = playlistBody,
-                    quality = "HLS",
-                    videoUrl = playlistBody,
-                    headers = headers,
-                ),
-            )
-        }
-
-        return videos.sortedByDescending { parseHeight(it.quality) }
-    }
-
-    private fun extractVideoId(playlistBody: String): String {
-        val match = Pattern.compile("playlist/(\\d+)").matcher(playlistBody)
-        return if (match.find()) match.group(1) else "0"
     }
 
     private fun parseHeight(quality: String): Int {
