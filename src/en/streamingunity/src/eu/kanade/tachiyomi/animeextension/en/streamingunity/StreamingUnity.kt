@@ -11,17 +11,15 @@ import eu.kanade.tachiyomi.animesource.model.SEpisode
 import eu.kanade.tachiyomi.animesource.model.Video
 import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.network.GET
-import eu.kanade.tachiyomi.network.asObservable
-import eu.kanade.tachiyomi.network.asObservableSuccess
+import eu.kanade.tachiyomi.network.awaitSuccess
 import keiyoushi.utils.bodyString
 import keiyoushi.utils.getPreferencesLazy
-import keiyoushi.utils.parallelMapBlocking
+import keiyoushi.utils.parallelMap
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import okhttp3.Request
 import okhttp3.Response
 import org.jsoup.parser.Parser
-import rx.Observable
 import uy.kohesive.injekt.injectLazy
 import java.util.regex.Pattern
 
@@ -80,40 +78,30 @@ class StreamingUnity :
 
     override fun animeDetailsRequest(anime: SAnime): Request = GET("$baseUrl${anime.url}", headers)
 
-    override fun fetchAnimeDetails(anime: SAnime): Observable<SAnime> {
-        return Observable.fromCallable {
-            val response = try {
-                client.newCall(animeDetailsRequest(anime)).execute()
-            } catch (e: Exception) {
-                throw e
-            }
+    override suspend fun getAnimeDetails(anime: SAnime): SAnime {
+        val response = try {
+            client.newCall(animeDetailsRequest(anime)).awaitSuccess()
+        } catch (e: Exception) {
+            throw e
+        }
 
-            if (response.code == 404) {
-                response.close()
-                // Recovery: search by name
-                val searchRequest = searchAnimeRequest(1, anime.title, AnimeFilterList())
-                val searchResponse = client.newCall(searchRequest).execute()
-                val searchPage = searchAnimeParse(searchResponse)
-                val matchedAnime = searchPage.animes.firstOrNull {
-                    it.title.equals(anime.title, ignoreCase = true) ||
-                        cleanTitle(it.title) == cleanTitle(anime.title)
-                } ?: throw Exception("Title '${anime.title}' not found on site (404)")
+        return if (response.code == 404) {
+            response.close()
+            // Recovery: search by name
+            val searchRequest = searchAnimeRequest(1, anime.title, AnimeFilterList())
+            val searchResponse = client.newCall(searchRequest).awaitSuccess()
+            val searchPage = searchAnimeParse(searchResponse)
+            val matchedAnime = searchPage.animes.firstOrNull {
+                it.title.equals(anime.title, ignoreCase = true) ||
+                    cleanTitle(it.title) == cleanTitle(anime.title)
+            } ?: throw Exception("Title '${anime.title}' not found on site (404)")
 
-                val recoveryResponse = client.newCall(GET("$baseUrl${matchedAnime.url}", headers)).execute()
-                if (!recoveryResponse.isSuccessful) {
-                    recoveryResponse.close()
-                    throw Exception("HTTP error ${recoveryResponse.code} during recovery")
-                }
-                val details = animeDetailsParse(recoveryResponse)
-                details.url = matchedAnime.url // Update the URL
-                details
-            } else {
-                if (!response.isSuccessful) {
-                    response.close()
-                    throw Exception("HTTP error ${response.code}")
-                }
-                animeDetailsParse(response)
-            }
+            val recoveryResponse = client.newCall(GET("$baseUrl${matchedAnime.url}", headers)).awaitSuccess()
+            val details = animeDetailsParse(recoveryResponse)
+            details.url = matchedAnime.url // Update the URL
+            details
+        } else {
+            animeDetailsParse(response)
         }
     }
 
@@ -148,72 +136,70 @@ class StreamingUnity :
 
     override fun episodeListRequest(anime: SAnime): Request = GET("$baseUrl${anime.url}", headers)
 
-    override fun fetchEpisodeList(anime: SAnime): Observable<List<SEpisode>> {
-        return Observable.fromCallable {
-            var url = anime.url
-            var response = client.newCall(GET("$baseUrl$url", headers)).execute()
+    override suspend fun getEpisodeList(anime: SAnime): List<SEpisode> {
+        var url = anime.url
+        var response = client.newCall(GET("$baseUrl$url", headers)).awaitSuccess()
 
-            if (response.code == 404) {
-                response.close()
-                // Recovery: search by name
-                val searchRequest = searchAnimeRequest(1, anime.title, AnimeFilterList())
-                val searchResponse = client.newCall(searchRequest).execute()
-                val searchPage = searchAnimeParse(searchResponse)
-                val matchedAnime = searchPage.animes.firstOrNull {
-                    it.title.equals(anime.title, ignoreCase = true) ||
-                        cleanTitle(it.title) == cleanTitle(anime.title)
-                } ?: throw Exception("Title '${anime.title}' not found on site (404)")
+        if (response.code == 404) {
+            response.close()
+            // Recovery: search by name
+            val searchRequest = searchAnimeRequest(1, anime.title, AnimeFilterList())
+            val searchResponse = client.newCall(searchRequest).awaitSuccess()
+            val searchPage = searchAnimeParse(searchResponse)
+            val matchedAnime = searchPage.animes.firstOrNull {
+                it.title.equals(anime.title, ignoreCase = true) ||
+                    cleanTitle(it.title) == cleanTitle(anime.title)
+            } ?: throw Exception("Title '${anime.title}' not found on site (404)")
 
-                url = matchedAnime.url
-                response = client.newCall(GET("$baseUrl$url", headers)).execute()
-            }
+            url = matchedAnime.url
+            response = client.newCall(GET("$baseUrl$url", headers)).awaitSuccess()
+        }
 
-            if (!response.isSuccessful) {
-                response.close()
-                throw Exception("HTTP error ${response.code}")
-            }
+        if (!response.isSuccessful) {
+            response.close()
+            throw Exception("HTTP error ${response.code}")
+        }
 
-            val html = response.bodyString()
-            val pageData = extractPageData(html) ?: throw Exception("Failed to parse page data")
-            val titleDetail = pageData.props.title ?: throw Exception("Title details not found in page data")
-            val loadedSeason = pageData.props.loadedSeason ?: throw Exception("No loaded season found")
+        val html = response.bodyString()
+        val pageData = extractPageData(html) ?: throw Exception("Failed to parse page data")
+        val titleDetail = pageData.props.title ?: throw Exception("Title details not found in page data")
+        val loadedSeason = pageData.props.loadedSeason ?: throw Exception("No loaded season found")
 
-            val episodesList = parseEpisodes(pageData).toMutableList()
+        val episodesList = parseEpisodes(pageData).toMutableList()
 
-            // Fetch other seasons in parallel using coroutine helper
-            val otherSeasons = titleDetail.seasons.filter { it.number != loadedSeason.number }
-            if (otherSeasons.isNotEmpty()) {
-                val otherEpisodes = otherSeasons.parallelMapBlocking { season ->
-                    val seasonUrl = "$baseUrl$url?season=${season.number}"
-                    try {
-                        val seasonResponse = client.newCall(GET(seasonUrl, headers)).execute()
-                        if (seasonResponse.isSuccessful) {
-                            val seasonPageData = extractPageData(seasonResponse.bodyString())
-                            if (seasonPageData != null) {
-                                parseEpisodes(seasonPageData)
-                            } else {
-                                emptyList()
-                            }
+        // Fetch other seasons in parallel using coroutine helper
+        val otherSeasons = titleDetail.seasons.filter { it.number != loadedSeason.number }
+        if (otherSeasons.isNotEmpty()) {
+            val otherEpisodes = otherSeasons.parallelMap { season ->
+                val seasonUrl = "$baseUrl$url?season=${season.number}"
+                try {
+                    val seasonResponse = client.newCall(GET(seasonUrl, headers)).awaitSuccess()
+                    if (seasonResponse.isSuccessful) {
+                        val seasonPageData = extractPageData(seasonResponse.bodyString())
+                        if (seasonPageData != null) {
+                            parseEpisodes(seasonPageData)
                         } else {
-                            seasonResponse.close()
                             emptyList()
                         }
-                    } catch (e: Exception) {
+                    } else {
+                        seasonResponse.close()
                         emptyList()
                     }
-                }.flatten()
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            }.flatten()
 
-                episodesList.addAll(otherEpisodes)
-            }
-
-            episodesList.sortWith(
-                compareByDescending<SEpisode> { ep ->
-                    ep.scanlator?.removePrefix("S")?.toIntOrNull() ?: 0
-                }.thenByDescending { it.episode_number },
-            )
-
-            episodesList
+            episodesList.addAll(otherEpisodes)
         }
+
+        episodesList.sortWith(
+            compareByDescending<SEpisode> { ep ->
+                ep.scanlator?.removePrefix("S")?.toIntOrNull() ?: 0
+            }.thenByDescending { it.episode_number },
+        )
+
+        return episodesList
     }
 
     override fun episodeListParse(response: Response): List<SEpisode> {
