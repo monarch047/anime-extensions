@@ -164,6 +164,17 @@ class StreamingUnity :
         val html = response.bodyString()
         val pageData = extractPageData(html) ?: throw Exception("Failed to parse page data")
         val titleDetail = pageData.props.title ?: throw Exception("Title details not found in page data")
+
+        if (titleDetail.type == "movie" || pageData.props.loadedSeason == null) {
+            return listOf(
+                SEpisode.create().apply {
+                    name = titleDetail.name
+                    episode_number = 1f
+                    setUrlWithoutDomain("/en/watch/${titleDetail.id}")
+                }
+            )
+        }
+
         val loadedSeason = pageData.props.loadedSeason ?: throw Exception("No loaded season found")
 
         val episodesList = parseEpisodes(pageData).toMutableList()
@@ -238,11 +249,16 @@ class StreamingUnity :
 
         val watchUrlPath = episode.url
         val titleId = watchUrlPath.removePrefix("/en/watch/").substringBefore("?").toLongOrNull()
-        val episodeId = watchUrlPath.substringAfter("episode_id=").substringBefore("&").toLongOrNull()
 
-        if (titleId == null || episodeId == null) return emptyList()
+        if (titleId == null) return emptyList()
 
-        val iframeUrl = "$baseUrl/en/iframe/$titleId?episode_id=$episodeId"
+        val iframeUrl = if (watchUrlPath.contains("episode_id=")) {
+            val episodeId = watchUrlPath.substringAfter("episode_id=").substringBefore("&").toLongOrNull()
+                ?: return emptyList()
+            "$baseUrl/en/iframe/$titleId?episode_id=$episodeId"
+        } else {
+            "$baseUrl/en/iframe/$titleId"
+        }
 
         return extractor.getVideos(iframeUrl)
     }
