@@ -20,8 +20,11 @@ tmpdir = tempfile.mkdtemp()
 shutil.copy2(apk_path, os.path.join(tmpdir, apk_name))
 if os.path.exists("repo-index.json"):
     shutil.copy2("repo-index.json", os.path.join(tmpdir, "index.json"))
+    os.remove("repo-index.json")
 if os.path.exists("repo-index.min.json"):
     shutil.copy2("repo-index.min.json", os.path.join(tmpdir, "index.min.json"))
+    os.remove("repo-index.min.json")
+
 
 def run(cmd, check=True):
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
