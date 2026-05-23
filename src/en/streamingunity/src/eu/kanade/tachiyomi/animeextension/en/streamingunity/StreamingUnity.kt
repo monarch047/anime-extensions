@@ -118,14 +118,14 @@ class StreamingUnity :
                 append("\n\n")
                 append("Score: ${titleDetail.score ?: "?"}\u2605")
                 append("\nStatus: ${titleDetail.status ?: "Unknown"}")
-                append("\nType: ${titleDetail.type.uppercase()}")
+                append("\nType: ${titleDetail.type?.uppercase() ?: "UNKNOWN"}")
                 append("\nViews: ${titleDetail.views ?: "?"}")
                 titleDetail.release_date?.let { append("\nRelease: $it") }
                 titleDetail.last_air_date?.let { append("\nLast aired: $it") }
                 titleDetail.age?.let { append("\nAge rating: $it+") }
             }
             status = parseStatus(titleDetail.status)
-            genre = pageData.props.genres?.joinToString(", ") { it.name }
+            genre = titleDetail.genres?.joinToString(", ") { it.name }
 
             val poster = titleDetail.images?.find { it.type == "poster" }
             thumbnail_url = poster?.let { "$cdnUrl/images/${it.filename}" }
@@ -212,15 +212,18 @@ class StreamingUnity :
         val loadedSeason = pageData.props.loadedSeason ?: return emptyList()
         val episodes = mutableListOf<SEpisode>()
         val seasonEpisodes = loadedSeason.episodes ?: emptyList()
+        val seasonNumber = loadedSeason.number ?: 1
         for (ep in seasonEpisodes) {
+            val epNumber = ep.number ?: 1
+            val epId = ep.id ?: continue
             episodes.add(
                 SEpisode.create().apply {
-                    name = "S${loadedSeason.number}:E${ep.number} - ${ep.name ?: "Episode ${ep.number}"}"
-                    episode_number = ep.number.toFloat()
+                    name = "S$seasonNumber:E$epNumber - ${ep.name ?: "Episode $epNumber"}"
+                    episode_number = epNumber.toFloat()
                     setUrlWithoutDomain(
-                        "/en/watch/${titleDetail.id}?episode_id=${ep.id}&season=${loadedSeason.number}",
+                        "/en/watch/${titleDetail.id}?episode_id=$epId&season=$seasonNumber",
                     )
-                    scanlator = "S${loadedSeason.number}"
+                    scanlator = "S$seasonNumber"
                 },
             )
         }
@@ -252,13 +255,13 @@ class StreamingUnity :
 
     private fun extractPageData(html: String): InertiaPage? {
         val pattern = Pattern.compile(
-            """<div\s+id=["']app["']\s+data-page="(.*?)"\s*>""",
+            """data-page=(["'])(.*?)\1""",
             Pattern.DOTALL,
         )
         val matcher = pattern.matcher(html)
         if (!matcher.find()) return null
 
-        val rawJson = Parser.unescapeEntities(matcher.group(1), false)
+        val rawJson = Parser.unescapeEntities(matcher.group(2), false)
 
         return try {
             json.decodeFromString<InertiaPage>(rawJson)
@@ -306,5 +309,5 @@ private fun TitleItem.toSAnime(): SAnime = SAnime.create().apply {
     val cdnUrl = "https://cdn.streamingunity.dog"
     val posterImage = images.find { it.type == "poster" }
     thumbnail_url = posterImage?.let { "$cdnUrl/images/${it.filename}" }
-    url = "/en/titles/$id-$slug"
+    url = "/en/titles/$id-${slug ?: ""}"
 }

@@ -34,10 +34,10 @@ data class PageProps(
 data class TitleDetail(
     val id: Long,
     val name: String,
-    val slug: String,
+    val slug: String? = null,
     val plot: String? = null,
     val quality: String? = null,
-    val type: String, // "tv" or "movie"
+    val type: String? = null, // "tv" or "movie"
     val original_name: String? = null,
     val status: String? = null,
     val views: Int? = null,
@@ -51,6 +51,7 @@ data class TitleDetail(
     val seasons: List<Season> = emptyList(),
     val trailers: List<Trailer>? = null,
     val images: List<Image>? = null,
+    val genres: List<Genre>? = null,
 )
 
 /**
@@ -58,8 +59,8 @@ data class TitleDetail(
  */
 @Serializable
 data class Season(
-    val id: Long,
-    val number: Int,
+    val id: Long? = null,
+    val number: Int? = null,
     val name: String? = null,
     val plot: String? = null,
     val release_date: String? = null,
@@ -73,8 +74,8 @@ data class Season(
  */
 @Serializable
 data class Episode(
-    val id: Long,
-    val number: Int,
+    val id: Long? = null,
+    val number: Int? = null,
     val name: String? = null,
     val plot: String? = null,
     val duration: Int? = null,
@@ -89,8 +90,8 @@ data class Episode(
  */
 @Serializable
 data class Image(
-    val filename: String,
-    val type: String, // "poster", "cover", "background", "logo", "cover_mobile"
+    val filename: String? = null,
+    val type: String? = null, // "poster", "cover", "background", "logo", "cover_mobile"
     val lang: String? = null,
     val original_url_field: String? = null,
 )
@@ -110,9 +111,9 @@ data class Trailer(
  */
 @Serializable
 data class Slider(
-    val name: String, // "trending", "latest", "top10", "related"
-    val label: String,
-    val titles: List<TitleItem>,
+    val name: String? = null, // "trending", "latest", "top10", "related"
+    val label: String? = null,
+    val titles: List<TitleItem>? = null,
 )
 
 /**
@@ -121,9 +122,9 @@ data class Slider(
 @Serializable
 data class TitleItem(
     val id: Long,
-    val slug: String,
+    val slug: String? = null,
     val name: String,
-    val type: String, // "tv" or "movie"
+    val type: String? = null, // "tv" or "movie"
     val score: String? = null,
     val sub_ita: Int? = null,
     val last_air_date: String? = null,
@@ -140,5 +141,5 @@ data class TitleItem(
 data class Genre(
     val id: Int,
     val name: String,
-    val slug: String,
+    val slug: String? = null,
 )
